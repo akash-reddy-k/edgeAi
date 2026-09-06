@@ -8,15 +8,10 @@ Original file is located at
 """
 
 !pip install ultralytics
-
-from google.colab import drive;
-drive.mount('/content/drive')
+!pip install lap>=0.5.12
 
 from ultralytics import YOLO
 model = YOLO('yolov8n.pt')
-
-results = model('https://ultralytics.com/images/bus.jpg')
-results[0].show()  # displays the image with bounding boxes drawn
 
 from google.colab import files
 uploaded = files.upload()  # opens a file picker — select your video
@@ -37,13 +32,13 @@ def send_alert(person_count):
 # --- Run inference frame-by-frame on your video ---
 videoframes = model(video_path, stream=True, classes=[0], vid_stride=5, verbose=False)
 for frame_result in videoframes:
-    person_count = len(frame_result.boxes)  # number of person detections this frame
+    person_count = len(frame_result.boxes)
 
     if owners_away and person_count > 0:
         alert_counter += 1
+        if alert_counter >= CONSECUTIVE_FRAMES_THRESHOLD and not alert_sent:
+            send_alert(person_count)
+            alert_sent = True
     else:
-        alert_counter = 0  # reset if no detection this frame
-
-    if alert_counter >= CONSECUTIVE_FRAMES_THRESHOLD and not alert_sent:
-        send_alert(person_count)
-        alert_sent = True  # avoid spamming repeated alerts for the same event
+        alert_counter = 0
+        alert_sent = False  # room is empty again — ready to alert on the next intrusion
