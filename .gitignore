@@ -1,7 +1,8 @@
 .idea
-node_modules
-dist
 .env
 .gitignore
-models/*.pt
-models/*.onnx
+models/
+data/
+edgeai_env/
+__pycache__/
+*.pyc

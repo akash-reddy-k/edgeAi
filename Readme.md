@@ -1,133 +1,163 @@
-# Edge AI — Local Person Detection & Alert System
+# Edge AI — Loitering Detection on Constrained Hardware
 
-Detects people in a video file and prints an alert if someone is spotted while the house owners are away. Uses [YOLOv8](https://docs.ultralytics.com/) — a lightweight AI model that runs entirely on your laptop, no internet or GPU required after setup.
+A real-time person detection and loitering alert pipeline built to research how far commercial-grade surveillance AI can be pushed down to cheap, low-power microcontrollers — no dedicated AI chip required.
+
+**Research angle:** Commercial systems (Hikvision AcuSense, Ambarella CV7) solve this on purpose-built AI silicon. This project documents the accuracy vs. model-size vs. latency tradeoff when you strip that away and target plain MCUs (STM32, ESP32).
 
 ---
 
-## What it does
+## Project Phases
 
-- Reads any video file you give it (MP4, AVI, MOV, etc.)
-- Scans every 5th frame for people
-- Once it sees a person across 5 consecutive sampled frames, it prints an alert
-- Resets and watches again if the area becomes empty
+| Phase | Focus | Status |
+|---|---|---|
+| 1 | Environment setup | Done |
+| 2 | Dataset & scope — loitering detection baseline | **In progress** |
+| 3 | Fine-tune on scoped dataset, record mAP |  |
+| 4 | INT8 quantization (post-training + QAT comparison) |  |
+| 5 | STM32Cube.AI / Edge Impulse EON simulation |  |
+| 6 | Ablation table — size / accuracy / latency |  |
+| 7 | Writeup |  |
+
+---
+
+## What it does (Phase 2 scope)
+
+**Loitering detection** — tracks each detected person by ID across frames and fires an alert once they have been present continuously for longer than a configurable threshold (default: 5 seconds). Uses [YOLOv8n](https://docs.ultralytics.com/) + ByteTrack, runs entirely on CPU, no GPU required.
+
+Why loitering and not full anomaly detection: full weakly-supervised anomaly detection (UCF-Crime style) is a genuinely hard open research problem. The tractable contribution here is the compression and deployment pipeline, not inventing a new detector.
 
 ---
 
 ## Prerequisites
 
-You only need **Python 3.8 or higher** installed on your machine.
-
-**Check if you have it:**
+**Python 3.8 or higher.** Check with:
 ```bash
 python3 --version
 ```
 
-If you see `Python 3.x.x`, you're good. If not, download it from [python.org](https://www.python.org/downloads/).
+Download from [python.org](https://www.python.org/downloads/) if needed.
 
 ---
 
 ## Setup (one-time)
 
-**1. Download the project**
-
+**1. Clone the repo**
 ```bash
 git clone https://github.com/akash-reddy-k/edgeAi.git
 cd edgeAi
 ```
 
 **2. Create a virtual environment**
-
-This keeps the project's packages separate from the rest of your system.
-
 ```bash
 python3 -m venv edgeai_env
 ```
 
-**3. Activate the virtual environment**
+**3. Activate it**
 
-On macOS / Linux:
+macOS / Linux:
 ```bash
 source edgeai_env/bin/activate
 ```
-
-On Windows:
+Windows:
 ```bash
 edgeai_env\Scripts\activate
 ```
 
-You should see `(edgeai_env)` appear at the start of your terminal prompt.
+You'll see `(edgeai_env)` in your prompt when it's active.
 
 **4. Install dependencies**
-
 ```bash
 pip install -r requirements.txt
 ```
 
-This installs `ultralytics` and everything it needs (PyTorch, OpenCV, etc.). It may take a minute.
+> The first run downloads YOLOv8n weights (~6 MB) automatically. One-time internet connection needed.
 
 ---
 
-## Running the script
+## Usage
 
+### Loitering detection
 ```bash
 python edgeAi.py files/TwoKids.mp4
 ```
 
-Replace `files/TwoKids.mp4` with the path to any video you want to analyse.
-
-**What you'll see:**
-
+Expected output:
 ```
-ALERT: 2 person(s) detected while house is away!
+Running loitering detection on: files/TwoKids.mp4  (threshold: 5.0s @ 30.0 fps)
+ALERT: Person #1 loitering — present for 5.1s
 ```
 
-If no people are detected, the script finishes silently.
-
-> **Note:** The first time you run it, the YOLOv8 model weights (~6 MB) are downloaded automatically. This requires an internet connection once.
-
----
-
-## Using your own video
-
-Put any `.mp4`, `.avi`, or `.mov` file anywhere on your computer and pass its path:
-
+Use your own video:
 ```bash
 python edgeAi.py /path/to/your/video.mp4
 ```
 
+Change the loitering threshold:
+```bash
+python edgeAi.py files/TwoKids.mp4 --loiter-seconds 10
+```
+
+### Baseline evaluation
+Run this before any quantization to record the FP32 baseline. This number is the benchmark everything else is measured against.
+
+Single video:
+```bash
+python eval.py files/TwoKids.mp4
+```
+
+Whole directory (e.g. ShanghaiTech dataset):
+```bash
+python eval.py data/shanghaitech/ --output results/baseline.json
+```
+
+Results are saved as JSON in `results/`.
+
 ---
 
-## Adjusting behaviour
+## Dataset — ShanghaiTech Campus
 
-Open `edgeAi.py` in any text editor to change these two settings near the top of the file:
+Download the dataset from Kaggle and extract it into `data/shanghaitech/`:
 
-| Setting | Default | What it does |
-|---|---|---|
-| `--owners-away` flag | `True` | Pass this flag to enable alert mode. Remove it to disable alerts. |
-| `CONSECUTIVE_FRAMES_THRESHOLD` | `5` | How many consecutive detections before an alert fires. Higher = fewer false positives. |
+https://www.kaggle.com/datasets/nikanvasei/shanghaitech-campus-dataset-test
 
-Example — disable alerts (owners are home):
+Then run the baseline eval:
 ```bash
-python edgeAi.py files/TwoKids.mp4  # --owners-away is True by default
+python eval.py data/shanghaitech/ --output results/baseline.json
+```
+
+---
+
+## Project structure
+
+```
+edgeAi/
+├── edgeAi.py              # loitering detection (main script)
+├── eval.py                # baseline detection evaluation
+├── download_dataset.py    # ShanghaiTech download helper
+├── requirements.txt
+├── models/                # model weights — gitignored, auto-downloaded
+│   └── yolov8n.pt
+├── data/                  # datasets — gitignored
+│   └── shanghaitech/
+├── results/               # eval output JSON — gitignored
+└── files/                 # sample test videos
+    ├── TwoKids.mp4
+    ├── SumithSleeping.mp4
+    └── concert.mp4
 ```
 
 ---
 
 ## Troubleshooting
 
-**`python3: command not found`**
-Install Python from [python.org](https://www.python.org/downloads/) and re-open your terminal.
-
 **`ModuleNotFoundError: No module named 'ultralytics'`**
-You forgot to activate the virtual environment. Run:
-```bash
-source edgeai_env/bin/activate   # macOS/Linux
-edgeai_env\Scripts\activate      # Windows
-```
-Then try again.
+Virtual environment isn't active. Run `source edgeai_env/bin/activate` (macOS/Linux) or `edgeai_env\Scripts\activate` (Windows).
 
-**`No such file or directory: 'files/TwoKids.mp4'`**
-The video path is wrong. Double-check the filename and that you are running the command from inside the `edgeAi` folder.
+**`No such file or directory`**
+Wrong video path, or you're not running from inside the `edgeAi` folder.
 
-**Script runs but prints nothing**
-No people were detected in your video, or fewer than 5 consecutive sampled frames had a person. Try a video with visible people in frame for a few seconds.
+**Script finishes with "No loitering detected"**
+Nobody stayed in frame long enough to hit the threshold. Try `--loiter-seconds 2` for a quick test, or use a video with people standing around.
+
+**Kaggle authentication failed**
+Make sure `kaggle.json` is in the right place and you've run `chmod 600 ~/.kaggle/kaggle.json`.
