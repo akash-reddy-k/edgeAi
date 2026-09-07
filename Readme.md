@@ -22,9 +22,9 @@ A real-time person detection and loitering alert pipeline built to research how 
 
 ## What it does (Phase 2 scope)
 
-**Loitering detection** — tracks each detected person by ID across frames and fires an alert once they have been present continuously for longer than a configurable threshold (default: 5 seconds). Uses [YOLOv8n](https://docs.ultralytics.com/) + ByteTrack, runs entirely on CPU, no GPU required.
+**Loitering detection** — tracks each detected person by ID across frames and fires an alert once they have been present continuously beyond a configurable time threshold (default: 5 seconds). Uses [YOLOv8n](https://docs.ultralytics.com/) + ByteTrack, runs entirely on CPU, no GPU required.
 
-Why loitering and not full anomaly detection: full weakly-supervised anomaly detection (UCF-Crime style) is a genuinely hard open research problem. The tractable contribution here is the compression and deployment pipeline, not inventing a new detector.
+Validated against the ShanghaiTech Campus dataset (frame-level anomaly labels). Full weakly-supervised anomaly detection is out of scope — the research contribution is the compression and deployment pipeline, not a new detector.
 
 ---
 
@@ -92,22 +92,21 @@ Use your own video:
 python edgeAi.py /path/to/your/video.mp4
 ```
 
-Change the loitering threshold:
+Lower the threshold for a quick test:
 ```bash
-python edgeAi.py files/TwoKids.mp4 --loiter-seconds 10
+python edgeAi.py files/TwoKids.mp4 --loiter-seconds 2
+```
+
+Raise it to reduce false positives in busy scenes:
+```bash
+python edgeAi.py files/TwoKids.mp4 --loiter-seconds 15
 ```
 
 ### Baseline evaluation
 Run this before any quantization to record the FP32 baseline. This number is the benchmark everything else is measured against.
 
-Single video:
 ```bash
-python eval.py files/TwoKids.mp4
-```
-
-Whole directory (e.g. ShanghaiTech dataset):
-```bash
-python eval.py data/shanghaitech/ --output results/baseline.json
+python eval.py data/SHANGHAI_Test/ --output results/baseline.json
 ```
 
 Results are saved as JSON in `results/`.
@@ -116,13 +115,13 @@ Results are saved as JSON in `results/`.
 
 ## Dataset — ShanghaiTech Campus
 
-Download the dataset from Kaggle and extract it into `data/shanghaitech/`:
+Download the dataset from Kaggle and extract it into `data/SHANGHAI_Test/`:
 
 https://www.kaggle.com/datasets/nikanvasei/shanghaitech-campus-dataset-test
 
 Then run the baseline eval:
 ```bash
-python eval.py data/shanghaitech/ --output results/baseline.json
+python eval.py data/SHANGHAI_Test/ --output results/baseline.json
 ```
 
 ---
