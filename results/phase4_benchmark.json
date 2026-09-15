@@ -1,0 +1,76 @@
+{
+  "config": {
+    "device": "cpu",
+    "imgsz": 640,
+    "batch": 1,
+    "rect": false,
+    "dataset": "data/yolo_dataset/dataset.yaml",
+    "val_images": 4665,
+    "latency_images": 200,
+    "warmup": 20,
+    "accuracy_measured": true
+  },
+  "note": "Absolute mAP is self-referential \u2014 val labels are pseudo-labels from the base YOLOv8n. Only the deltas between variants are valid. See README 'Methodology & Limitations'.",
+  "variants": {
+    "PyTorch FP32": {
+      "path": "models/yolov8n_finetuned.pt",
+      "size_mb": 5.94,
+      "accuracy": {
+        "mAP50": 0.938,
+        "mAP50-95": 0.7712,
+        "precision": 0.9278,
+        "recall": 0.8831
+      },
+      "latency": {
+        "n_images": 200,
+        "preprocess_ms": 0.49,
+        "inference_ms_median": 21.37,
+        "inference_ms_mean": 21.37,
+        "inference_ms_stdev": 0.77,
+        "postprocess_ms": 0.28,
+        "end_to_end_ms": 24.41,
+        "fps_end_to_end": 40.97
+      }
+    },
+    "ONNX FP32": {
+      "path": "models/yolov8n_finetuned_fp32.onnx",
+      "size_mb": 11.7,
+      "accuracy": {
+        "mAP50": 0.938,
+        "mAP50-95": 0.7712,
+        "precision": 0.9278,
+        "recall": 0.8831
+      },
+      "latency": {
+        "n_images": 200,
+        "preprocess_ms": 1.01,
+        "inference_ms_median": 11.57,
+        "inference_ms_mean": 13.24,
+        "inference_ms_stdev": 2.8,
+        "postprocess_ms": 0.66,
+        "end_to_end_ms": 17.55,
+        "fps_end_to_end": 56.97
+      }
+    },
+    "ONNX INT8": {
+      "path": "models/yolov8n_finetuned_int8.onnx",
+      "size_mb": 3.23,
+      "accuracy": {
+        "mAP50": 0.9361,
+        "mAP50-95": 0.7377,
+        "precision": 0.9256,
+        "recall": 0.8841
+      },
+      "latency": {
+        "n_images": 200,
+        "preprocess_ms": 0.89,
+        "inference_ms_median": 12.0,
+        "inference_ms_mean": 12.01,
+        "inference_ms_stdev": 0.23,
+        "postprocess_ms": 0.48,
+        "end_to_end_ms": 15.37,
+        "fps_end_to_end": 65.04
+      }
+    }
+  }
+}
