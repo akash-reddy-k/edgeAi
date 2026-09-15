@@ -6,3 +6,4 @@ data/
 edgeai_env/
 __pycache__/
 *.pyc
+runs/
