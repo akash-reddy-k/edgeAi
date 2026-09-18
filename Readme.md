@@ -14,8 +14,8 @@ A real-time person detection and loitering alert pipeline built to research how 
 | 2 | Dataset & scope — loitering detection baseline | Done |
 | 3 | Fine-tune on scoped dataset, record mAP | Done |
 | 4 | INT8 quantization — size / accuracy / latency tradeoff | Done |
-| 5 | STM32Cube.AI / Edge Impulse EON simulation | Next |
-| 6 | Ablation table — size / accuracy / latency |  |
+| 5 | MCU deployment feasibility — flash / RAM profiling | Done |
+| 6 | Ablation table — size / accuracy / latency | Next |
 | 7 | Writeup |  |
 
 ---
@@ -100,6 +100,90 @@ The Phase 4 plan called for quantization-aware training *only if* post-training
 quantization degraded accuracy badly. A 0.2% mAP50 drop does not meet that bar — QAT would
 add a full retraining cycle to recover a fraction of a percent on a metric whose absolute
 value is already self-referential. Skipped as a deliberate scope decision.
+
+---
+
+## Phase 5 — Does it actually fit on a microcontroller?
+
+**Short answer: no. Not on any plain STM32, at any input resolution.** This is the
+project's central negative result, and it is a more useful finding than a success would
+have been.
+
+Two numbers decide MCU deployability: **flash** (weights, stored once) and **activation
+RAM** (the working arena, reused across layers). `mcu_profile.py` computes both directly
+from the ONNX graph — reproducible from this repo, no vendor account required.
+
+### Flash — 3,117 KB, and input resolution cannot reduce it
+
+| Component | Size |
+|---|---|
+| INT8 weights | 2,930.3 KB |
+| FP32 scales / zero-points | 165.1 KB |
+| INT32 biases | 21.3 KB |
+| **Total** | **3,117 KB (3.04 MB)** |
+
+Sanity check: 3,005,843 parameters × 1 byte = 2,935 KB theoretical against 2,930.3 KB
+measured. The accounting matches to 0.2%.
+
+The critical property is that **YOLOv8n is fully convolutional, so its weight count is
+independent of input resolution.** Shrinking the input from 640×640 to 96×96 does not
+remove a single byte of flash. Against the 2,048 KB of the largest plain STM32 (H743), the
+model overshoots by 52% and no amount of resolution scaling closes that gap.
+
+### Activation RAM — scales with resolution, bottlenecked at layer one
+
+| Input | Arena (SiLU fused) | Arena (unfused) |
+|---|---|---|
+| 640×640 | 2,800 KB | 4,800 KB |
+| 320×320 | 700 KB | 1,200 KB |
+| 256×256 | 448 KB | 768 KB |
+| 192×192 | 252 KB | 432 KB |
+| 128×128 | 112 KB | 192 KB |
+| 96×96 | 63 KB | 108 KB |
+
+The peak sits at **node 0** — the very first convolution — at every resolution, because
+that is where the tensors are largest, before any downsampling. The 640×640 figure is
+hand-verifiable: input (3×640×640 = 1,200 KB) + first conv output (16×320×320 = 1,600 KB)
+= 2,800 KB.
+
+### Feasibility frontier
+
+| Target | Flash | RAM | Max workable input |
+|---|---|---|---|
+| STM32F746 (M7) | 1 MB | 320 KB | **none** |
+| STM32F767 (M7) | 2 MB | 512 KB | **none** |
+| STM32H743 (M7 480 MHz) | 2 MB | 1 MB | **none** |
+| ESP32-S3 | 8 MB ext | 512 KB | 256×256 |
+| ESP32-S3 + 8 MB PSRAM | 8 MB ext | 8 MB | 640×640 |
+| STM32N657 (M55 + NPU) | 8 MB ext | 4.2 MB | 640×640 |
+
+**Reading this table honestly:** the only targets that fit are the ones that cheat. The
+ESP32-S3 relies on *external* flash and, past 256×256, external PSRAM — both off-chip, both
+far slower than internal SRAM. The STM32N657 fits comfortably, but it carries a Neural-ART
+NPU, which is precisely the dedicated AI silicon this project set out to do without. It
+proves the thesis by contradiction.
+
+The genuinely useful conclusion: **flash is the binding constraint, not RAM, and not
+latency.** Quantization already bought 72%; reaching a plain STM32H743 needs roughly another
+2× off the *weights*, which INT8 cannot give. That requires architectural change —
+channel pruning, a reduced width multiplier, or INT4 — which is exactly what Phase 6's
+ablation is now scoped to test.
+
+### Method and its limits
+
+- **This is an analytical model, not a vendor measurement.** STM32Cube.AI and Edge Impulse
+  EON were not run — both require vendor accounts, and neither is installed here. Their
+  numbers would be somewhat *higher* (runtime overhead, buffer alignment, imperfect
+  planning), which strengthens rather than weakens the negative conclusion.
+- **The arena is a lower bound.** It assumes a perfect memory planner that frees every
+  buffer the instant it dies. Real runtimes do worse. A lower bound is the conservative
+  choice for a feasibility claim: if even the floor does not fit, nothing does.
+- **SiLU fusion is modelled explicitly.** ONNX stores SiLU as `Mul(y, Sigmoid(y))`, leaving
+  three full-size tensors live at once. Every real MCU runtime emits a single fused kernel.
+  Skipping this pass overstates the arena by up to 1.7×, and since YOLOv8's peak sits on the
+  first SiLU, that error would land straight on the headline. Both figures are reported above.
+- Flash excludes the inference runtime and application code, so the real requirement is
+  higher still.
 
 ---
 
@@ -216,6 +300,19 @@ python benchmark.py --skip-accuracy             # latency + size only (seconds)
 python benchmark.py --latency-images 200        # tighter timing sample
 ```
 
+### Reproducing Phase 5 MCU profiling
+```bash
+python mcu_profile.py    # flash + activation RAM vs MCU budgets (~30s)
+```
+
+Writes `results/phase5_mcu_profile.json` and prints the feasibility frontier.
+
+Options:
+```bash
+python mcu_profile.py --resolutions 640 320 160 96   # custom resolution sweep
+python mcu_profile.py --runtime-overhead-kb 64       # stricter RAM reserve
+```
+
 ---
 
 ## Methodology & Limitations
@@ -295,12 +392,14 @@ edgeAi/
 ├── train.py               # fine-tuning
 ├── quantize.py            # ONNX FP32 + INT8 export w/ leak-free calibration
 ├── benchmark.py           # size / accuracy / latency tradeoff table
+├── mcu_profile.py         # flash + activation RAM vs real MCU budgets
 ├── requirements.txt
 ├── models/                # weights — gitignored
 │   ├── yolov8n.pt                    # COCO-pretrained base
 │   ├── yolov8n_finetuned.pt          # Phase 3 output
 │   ├── yolov8n_finetuned_fp32.onnx   # Phase 4 — ONNX FP32
-│   └── yolov8n_finetuned_int8.onnx   # Phase 4 — ONNX INT8
+│   ├── yolov8n_finetuned_int8.onnx   # Phase 4 — ONNX INT8
+│   └── profile_cache/                # Phase 5 — per-resolution export cache
 ├── data/                  # datasets — gitignored
 │   ├── SHANGHAI_Test/         # raw dataset
 │   └── yolo_dataset/          # generated labels + symlinked splits

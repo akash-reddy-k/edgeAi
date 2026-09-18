@@ -1,0 +1,577 @@
+{
+  "method": "Flash from INT8 ONNX initializers. Activation arena via liveness analysis assuming a perfect memory planner and fused INT8 activations (1 byte/element) \u2014 a LOWER BOUND on real RAM.",
+  "runtime_overhead_kb": 32.0,
+  "flash": {
+    "total_bytes": 3191687,
+    "total_kb": 3116.9,
+    "by_dtype_kb": {
+      "int8": 2930.3,
+      "float32": 165.1,
+      "int32": 21.3,
+      "int64": 0.2
+    },
+    "file_kb": 3309.5
+  },
+  "arena_by_resolution": [
+    {
+      "imgsz": 640,
+      "arena_bytes": 2867200,
+      "arena_kb": 2800.0,
+      "peak_at_node": 0,
+      "peak_node_op": "Conv+SiLU",
+      "live_tensors_at_peak": 2,
+      "largest_live": [
+        {
+          "kb": 1600.0,
+          "name": "/model.0/act/Mul_output_0"
+        },
+        {
+          "kb": 1200.0,
+          "name": "images"
+        }
+      ],
+      "n_nodes": 119,
+      "silu_fused": true,
+      "arena_kb_unfused": 4800.0
+    },
+    {
+      "imgsz": 512,
+      "arena_bytes": 1835008,
+      "arena_kb": 1792.0,
+      "peak_at_node": 0,
+      "peak_node_op": "Conv+SiLU",
+      "live_tensors_at_peak": 2,
+      "largest_live": [
+        {
+          "kb": 1024.0,
+          "name": "/model.0/act/Mul_output_0"
+        },
+        {
+          "kb": 768.0,
+          "name": "images"
+        }
+      ],
+      "n_nodes": 119,
+      "silu_fused": true,
+      "arena_kb_unfused": 3072.0
+    },
+    {
+      "imgsz": 416,
+      "arena_bytes": 1211392,
+      "arena_kb": 1183.0,
+      "peak_at_node": 0,
+      "peak_node_op": "Conv+SiLU",
+      "live_tensors_at_peak": 2,
+      "largest_live": [
+        {
+          "kb": 676.0,
+          "name": "/model.0/act/Mul_output_0"
+        },
+        {
+          "kb": 507.0,
+          "name": "images"
+        }
+      ],
+      "n_nodes": 119,
+      "silu_fused": true,
+      "arena_kb_unfused": 2028.0
+    },
+    {
+      "imgsz": 320,
+      "arena_bytes": 716800,
+      "arena_kb": 700.0,
+      "peak_at_node": 0,
+      "peak_node_op": "Conv+SiLU",
+      "live_tensors_at_peak": 2,
+      "largest_live": [
+        {
+          "kb": 400.0,
+          "name": "/model.0/act/Mul_output_0"
+        },
+        {
+          "kb": 300.0,
+          "name": "images"
+        }
+      ],
+      "n_nodes": 119,
+      "silu_fused": true,
+      "arena_kb_unfused": 1200.0
+    },
+    {
+      "imgsz": 256,
+      "arena_bytes": 458752,
+      "arena_kb": 448.0,
+      "peak_at_node": 0,
+      "peak_node_op": "Conv+SiLU",
+      "live_tensors_at_peak": 2,
+      "largest_live": [
+        {
+          "kb": 256.0,
+          "name": "/model.0/act/Mul_output_0"
+        },
+        {
+          "kb": 192.0,
+          "name": "images"
+        }
+      ],
+      "n_nodes": 119,
+      "silu_fused": true,
+      "arena_kb_unfused": 768.0
+    },
+    {
+      "imgsz": 192,
+      "arena_bytes": 258048,
+      "arena_kb": 252.0,
+      "peak_at_node": 0,
+      "peak_node_op": "Conv+SiLU",
+      "live_tensors_at_peak": 2,
+      "largest_live": [
+        {
+          "kb": 144.0,
+          "name": "/model.0/act/Mul_output_0"
+        },
+        {
+          "kb": 108.0,
+          "name": "images"
+        }
+      ],
+      "n_nodes": 119,
+      "silu_fused": true,
+      "arena_kb_unfused": 432.0
+    },
+    {
+      "imgsz": 160,
+      "arena_bytes": 179200,
+      "arena_kb": 175.0,
+      "peak_at_node": 0,
+      "peak_node_op": "Conv+SiLU",
+      "live_tensors_at_peak": 2,
+      "largest_live": [
+        {
+          "kb": 100.0,
+          "name": "/model.0/act/Mul_output_0"
+        },
+        {
+          "kb": 75.0,
+          "name": "images"
+        }
+      ],
+      "n_nodes": 119,
+      "silu_fused": true,
+      "arena_kb_unfused": 300.0
+    },
+    {
+      "imgsz": 128,
+      "arena_bytes": 114688,
+      "arena_kb": 112.0,
+      "peak_at_node": 0,
+      "peak_node_op": "Conv+SiLU",
+      "live_tensors_at_peak": 2,
+      "largest_live": [
+        {
+          "kb": 64.0,
+          "name": "/model.0/act/Mul_output_0"
+        },
+        {
+          "kb": 48.0,
+          "name": "images"
+        }
+      ],
+      "n_nodes": 119,
+      "silu_fused": true,
+      "arena_kb_unfused": 192.0
+    },
+    {
+      "imgsz": 96,
+      "arena_bytes": 64512,
+      "arena_kb": 63.0,
+      "peak_at_node": 0,
+      "peak_node_op": "Conv+SiLU",
+      "live_tensors_at_peak": 2,
+      "largest_live": [
+        {
+          "kb": 36.0,
+          "name": "/model.0/act/Mul_output_0"
+        },
+        {
+          "kb": 27.0,
+          "name": "images"
+        }
+      ],
+      "n_nodes": 119,
+      "silu_fused": true,
+      "arena_kb_unfused": 108.0
+    },
+    {
+      "imgsz": 64,
+      "arena_bytes": 28672,
+      "arena_kb": 28.0,
+      "peak_at_node": 0,
+      "peak_node_op": "Conv+SiLU",
+      "live_tensors_at_peak": 2,
+      "largest_live": [
+        {
+          "kb": 16.0,
+          "name": "/model.0/act/Mul_output_0"
+        },
+        {
+          "kb": 12.0,
+          "name": "images"
+        }
+      ],
+      "n_nodes": 119,
+      "silu_fused": true,
+      "arena_kb_unfused": 48.0
+    }
+  ],
+  "feasibility": {
+    "STM32F746 (M7 216MHz)": {
+      "flash_kb": 1024,
+      "ram_kb": 320,
+      "has_npu": false,
+      "note": "classic mid-range",
+      "by_resolution": {
+        "640": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": false
+        },
+        "512": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": false
+        },
+        "416": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": false
+        },
+        "320": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": false
+        },
+        "256": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": false
+        },
+        "192": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": true
+        },
+        "160": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": true
+        },
+        "128": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": true
+        },
+        "96": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": true
+        },
+        "64": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": true
+        }
+      }
+    },
+    "STM32F767 (M7 216MHz)": {
+      "flash_kb": 2048,
+      "ram_kb": 512,
+      "has_npu": false,
+      "note": "high-end F7",
+      "by_resolution": {
+        "640": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": false
+        },
+        "512": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": false
+        },
+        "416": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": false
+        },
+        "320": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": false
+        },
+        "256": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": true
+        },
+        "192": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": true
+        },
+        "160": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": true
+        },
+        "128": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": true
+        },
+        "96": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": true
+        },
+        "64": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": true
+        }
+      }
+    },
+    "STM32H743 (M7 480MHz)": {
+      "flash_kb": 2048,
+      "ram_kb": 1024,
+      "has_npu": false,
+      "note": "top plain STM32",
+      "by_resolution": {
+        "640": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": false
+        },
+        "512": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": false
+        },
+        "416": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": false
+        },
+        "320": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": true
+        },
+        "256": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": true
+        },
+        "192": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": true
+        },
+        "160": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": true
+        },
+        "128": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": true
+        },
+        "96": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": true
+        },
+        "64": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": true
+        }
+      }
+    },
+    "ESP32-S3 (LX7 240MHz)": {
+      "flash_kb": 8192,
+      "ram_kb": 512,
+      "has_npu": false,
+      "note": "internal SRAM only",
+      "by_resolution": {
+        "640": {
+          "fits": false,
+          "flash_ok": true,
+          "ram_ok": false
+        },
+        "512": {
+          "fits": false,
+          "flash_ok": true,
+          "ram_ok": false
+        },
+        "416": {
+          "fits": false,
+          "flash_ok": true,
+          "ram_ok": false
+        },
+        "320": {
+          "fits": false,
+          "flash_ok": true,
+          "ram_ok": false
+        },
+        "256": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        },
+        "192": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        },
+        "160": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        },
+        "128": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        },
+        "96": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        },
+        "64": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        }
+      }
+    },
+    "ESP32-S3 + 8MB PSRAM": {
+      "flash_kb": 8192,
+      "ram_kb": 8192,
+      "has_npu": false,
+      "note": "external PSRAM, slow",
+      "by_resolution": {
+        "640": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        },
+        "512": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        },
+        "416": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        },
+        "320": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        },
+        "256": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        },
+        "192": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        },
+        "160": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        },
+        "128": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        },
+        "96": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        },
+        "64": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        }
+      }
+    },
+    "STM32N657 (M55 + NPU)": {
+      "flash_kb": 8192,
+      "ram_kb": 4300,
+      "has_npu": true,
+      "note": "Neural-ART accelerator",
+      "by_resolution": {
+        "640": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        },
+        "512": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        },
+        "416": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        },
+        "320": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        },
+        "256": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        },
+        "192": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        },
+        "160": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        },
+        "128": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        },
+        "96": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        },
+        "64": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        }
+      }
+    }
+  }
+}
