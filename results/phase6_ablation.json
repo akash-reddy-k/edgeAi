@@ -1,0 +1,782 @@
+{
+  "method": "Flash and activation arena are architecture-determined, not weight-determined, so every variant here is measured UNTRAINED and the numbers are exact. Flash read from INT8 ONNX initializers; arena via liveness analysis assuming a perfect memory planner and fused INT8 activations (lower bound). Accuracy is NOT measured here \u2014 see Stage 2.",
+  "imgsz": 640,
+  "runtime_overhead_kb": 32.0,
+  "target": {
+    "mcu": "STM32H743",
+    "flash_kb": 2048,
+    "ram_kb": 1024
+  },
+  "variants": [
+    {
+      "key": "baseline",
+      "label": "P3/P4/P5  w0.25",
+      "cfg": "configs/yolov8-scaled.yaml",
+      "scale": "n",
+      "note": "Phase 3-5 baseline",
+      "depth_mult": 0.33,
+      "width_mult": 0.25,
+      "params": 3011043,
+      "strides": [
+        8,
+        16,
+        32
+      ],
+      "flash": {
+        "total_bytes": 3191687,
+        "total_kb": 3116.9,
+        "by_dtype_kb": {
+          "int8": 2930.3,
+          "float32": 165.1,
+          "int32": 21.3,
+          "int64": 0.2
+        },
+        "anchor_const_kb": 164.1,
+        "weights_only_kb": 2952.8,
+        "file_kb": 3306.9
+      },
+      "arena": {
+        "arena_bytes": 2867200,
+        "arena_kb": 2800.0,
+        "peak_at_node": 0,
+        "peak_node_op": "Conv+SiLU",
+        "live_tensors_at_peak": 2,
+        "largest_live": [
+          {
+            "kb": 1600.0,
+            "name": "/model.0/act/Mul_output_0"
+          },
+          {
+            "kb": 1200.0,
+            "name": "images"
+          }
+        ],
+        "n_nodes": 119,
+        "silu_fused": true,
+        "arena_kb_unfused": 4800.0
+      }
+    },
+    {
+      "key": "w1875",
+      "label": "P3/P4/P5  w0.1875",
+      "cfg": "configs/yolov8-scaled.yaml",
+      "scale": "t",
+      "note": "uniform 0.75x width",
+      "depth_mult": 0.33,
+      "width_mult": 0.1875,
+      "params": 1799187,
+      "strides": [
+        8,
+        16,
+        32
+      ],
+      "flash": {
+        "total_bytes": 1977431,
+        "total_kb": 1931.1,
+        "by_dtype_kb": {
+          "int8": 1749.2,
+          "float32": 165.1,
+          "int32": 16.6,
+          "int64": 0.2
+        },
+        "anchor_const_kb": 164.1,
+        "weights_only_kb": 1767.0,
+        "file_kb": 2121.4
+      },
+      "arena": {
+        "arena_bytes": 2867200,
+        "arena_kb": 2800.0,
+        "peak_at_node": 0,
+        "peak_node_op": "Conv+SiLU",
+        "live_tensors_at_peak": 2,
+        "largest_live": [
+          {
+            "kb": 1600.0,
+            "name": "/model.0/act/Mul_output_0"
+          },
+          {
+            "kb": 1200.0,
+            "name": "images"
+          }
+        ],
+        "n_nodes": 119,
+        "silu_fused": true,
+        "arena_kb_unfused": 4800.0
+      }
+    },
+    {
+      "key": "w125",
+      "label": "P3/P4/P5  w0.125",
+      "cfg": "configs/yolov8-scaled.yaml",
+      "scale": "p",
+      "note": "uniform 0.50x width",
+      "depth_mult": 0.33,
+      "width_mult": 0.125,
+      "params": 912731,
+      "strides": [
+        8,
+        16,
+        32
+      ],
+      "flash": {
+        "total_bytes": 1088559,
+        "total_kb": 1063.0,
+        "by_dtype_kb": {
+          "int8": 885.9,
+          "float32": 165.1,
+          "int32": 11.9,
+          "int64": 0.2
+        },
+        "anchor_const_kb": 164.1,
+        "weights_only_kb": 899.0,
+        "file_kb": 1252.7
+      },
+      "arena": {
+        "arena_bytes": 2048000,
+        "arena_kb": 2000.0,
+        "peak_at_node": 0,
+        "peak_node_op": "Conv+SiLU",
+        "live_tensors_at_peak": 2,
+        "largest_live": [
+          {
+            "kb": 1200.0,
+            "name": "images"
+          },
+          {
+            "kb": 800.0,
+            "name": "/model.0/act/Mul_output_0"
+          }
+        ],
+        "n_nodes": 119,
+        "silu_fused": true,
+        "arena_kb_unfused": 2400.0
+      }
+    },
+    {
+      "key": "p34",
+      "label": "P3/P4     w0.25",
+      "cfg": "configs/yolov8-p34.yaml",
+      "scale": "n",
+      "note": "P5 branch removed, full width",
+      "depth_mult": 0.33,
+      "width_mult": 0.25,
+      "params": 969698,
+      "strides": [
+        8,
+        16
+      ],
+      "flash": {
+        "total_bytes": 1136177,
+        "total_kb": 1109.5,
+        "by_dtype_kb": {
+          "int8": 942.2,
+          "float32": 156.9,
+          "int32": 10.2,
+          "int64": 0.2
+        },
+        "anchor_const_kb": 156.2,
+        "weights_only_kb": 953.3,
+        "file_kb": 1241.2
+      },
+      "arena": {
+        "arena_bytes": 2867200,
+        "arena_kb": 2800.0,
+        "peak_at_node": 0,
+        "peak_node_op": "Conv+SiLU",
+        "live_tensors_at_peak": 2,
+        "largest_live": [
+          {
+            "kb": 1600.0,
+            "name": "/model.0/act/Mul_output_0"
+          },
+          {
+            "kb": 1200.0,
+            "name": "images"
+          }
+        ],
+        "n_nodes": 87,
+        "silu_fused": true,
+        "arena_kb_unfused": 4800.0
+      }
+    },
+    {
+      "key": "p34w1875",
+      "label": "P3/P4     w0.1875",
+      "cfg": "configs/yolov8-p34.yaml",
+      "scale": "t",
+      "note": "P5 removed + 0.75x width",
+      "depth_mult": 0.33,
+      "width_mult": 0.1875,
+      "params": 604226,
+      "strides": [
+        8,
+        16
+      ],
+      "flash": {
+        "total_bytes": 769617,
+        "total_kb": 751.6,
+        "by_dtype_kb": {
+          "int8": 586.3,
+          "float32": 156.9,
+          "int32": 8.1,
+          "int64": 0.2
+        },
+        "anchor_const_kb": 156.2,
+        "weights_only_kb": 595.3,
+        "file_kb": 883.5
+      },
+      "arena": {
+        "arena_bytes": 2867200,
+        "arena_kb": 2800.0,
+        "peak_at_node": 0,
+        "peak_node_op": "Conv+SiLU",
+        "live_tensors_at_peak": 2,
+        "largest_live": [
+          {
+            "kb": 1600.0,
+            "name": "/model.0/act/Mul_output_0"
+          },
+          {
+            "kb": 1200.0,
+            "name": "images"
+          }
+        ],
+        "n_nodes": 87,
+        "silu_fused": true,
+        "arena_kb_unfused": 4800.0
+      }
+    },
+    {
+      "key": "p34w125",
+      "label": "P3/P4     w0.125",
+      "cfg": "configs/yolov8-p34.yaml",
+      "scale": "p",
+      "note": "P5 removed + 0.50x width",
+      "depth_mult": 0.33,
+      "width_mult": 0.125,
+      "params": 333242,
+      "strides": [
+        8,
+        16
+      ],
+      "flash": {
+        "total_bytes": 497529,
+        "total_kb": 485.9,
+        "by_dtype_kb": {
+          "int8": 322.8,
+          "float32": 156.9,
+          "int32": 6.0,
+          "int64": 0.2
+        },
+        "anchor_const_kb": 156.2,
+        "weights_only_kb": 329.6,
+        "file_kb": 617.3
+      },
+      "arena": {
+        "arena_bytes": 2048000,
+        "arena_kb": 2000.0,
+        "peak_at_node": 0,
+        "peak_node_op": "Conv+SiLU",
+        "live_tensors_at_peak": 2,
+        "largest_live": [
+          {
+            "kb": 1200.0,
+            "name": "images"
+          },
+          {
+            "kb": 800.0,
+            "name": "/model.0/act/Mul_output_0"
+          }
+        ],
+        "n_nodes": 87,
+        "silu_fused": true,
+        "arena_kb_unfused": 2400.0
+      }
+    }
+  ],
+  "feasibility": {
+    "STM32F746 (M7 216MHz)": {
+      "flash_kb": 1024,
+      "ram_kb": 320,
+      "has_npu": false,
+      "note": "classic mid-range",
+      "by_variant": {
+        "baseline": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": false
+        },
+        "w1875": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": false
+        },
+        "w125": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": false
+        },
+        "p34": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": false
+        },
+        "p34w1875": {
+          "fits": false,
+          "flash_ok": true,
+          "ram_ok": false
+        },
+        "p34w125": {
+          "fits": false,
+          "flash_ok": true,
+          "ram_ok": false
+        }
+      }
+    },
+    "STM32F767 (M7 216MHz)": {
+      "flash_kb": 2048,
+      "ram_kb": 512,
+      "has_npu": false,
+      "note": "high-end F7",
+      "by_variant": {
+        "baseline": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": false
+        },
+        "w1875": {
+          "fits": false,
+          "flash_ok": true,
+          "ram_ok": false
+        },
+        "w125": {
+          "fits": false,
+          "flash_ok": true,
+          "ram_ok": false
+        },
+        "p34": {
+          "fits": false,
+          "flash_ok": true,
+          "ram_ok": false
+        },
+        "p34w1875": {
+          "fits": false,
+          "flash_ok": true,
+          "ram_ok": false
+        },
+        "p34w125": {
+          "fits": false,
+          "flash_ok": true,
+          "ram_ok": false
+        }
+      }
+    },
+    "STM32H743 (M7 480MHz)": {
+      "flash_kb": 2048,
+      "ram_kb": 1024,
+      "has_npu": false,
+      "note": "top plain STM32",
+      "by_variant": {
+        "baseline": {
+          "fits": false,
+          "flash_ok": false,
+          "ram_ok": false
+        },
+        "w1875": {
+          "fits": false,
+          "flash_ok": true,
+          "ram_ok": false
+        },
+        "w125": {
+          "fits": false,
+          "flash_ok": true,
+          "ram_ok": false
+        },
+        "p34": {
+          "fits": false,
+          "flash_ok": true,
+          "ram_ok": false
+        },
+        "p34w1875": {
+          "fits": false,
+          "flash_ok": true,
+          "ram_ok": false
+        },
+        "p34w125": {
+          "fits": false,
+          "flash_ok": true,
+          "ram_ok": false
+        }
+      }
+    },
+    "ESP32-S3 (LX7 240MHz)": {
+      "flash_kb": 8192,
+      "ram_kb": 512,
+      "has_npu": false,
+      "note": "internal SRAM only",
+      "by_variant": {
+        "baseline": {
+          "fits": false,
+          "flash_ok": true,
+          "ram_ok": false
+        },
+        "w1875": {
+          "fits": false,
+          "flash_ok": true,
+          "ram_ok": false
+        },
+        "w125": {
+          "fits": false,
+          "flash_ok": true,
+          "ram_ok": false
+        },
+        "p34": {
+          "fits": false,
+          "flash_ok": true,
+          "ram_ok": false
+        },
+        "p34w1875": {
+          "fits": false,
+          "flash_ok": true,
+          "ram_ok": false
+        },
+        "p34w125": {
+          "fits": false,
+          "flash_ok": true,
+          "ram_ok": false
+        }
+      }
+    },
+    "ESP32-S3 + 8MB PSRAM": {
+      "flash_kb": 8192,
+      "ram_kb": 8192,
+      "has_npu": false,
+      "note": "external PSRAM, slow",
+      "by_variant": {
+        "baseline": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        },
+        "w1875": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        },
+        "w125": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        },
+        "p34": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        },
+        "p34w1875": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        },
+        "p34w125": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        }
+      }
+    },
+    "STM32N657 (M55 + NPU)": {
+      "flash_kb": 8192,
+      "ram_kb": 4300,
+      "has_npu": true,
+      "note": "Neural-ART accelerator",
+      "by_variant": {
+        "baseline": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        },
+        "w1875": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        },
+        "w125": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        },
+        "p34": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        },
+        "p34w1875": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        },
+        "p34w125": {
+          "fits": true,
+          "flash_ok": true,
+          "ram_ok": true
+        }
+      }
+    }
+  },
+  "envelope": {
+    "baseline": {
+      "640": {
+        "arena_kb": 2800.0,
+        "flash_kb": 3116.9,
+        "ram_need_kb": 2832.0
+      },
+      "512": {
+        "arena_kb": 1792.0,
+        "flash_kb": 3057.8,
+        "ram_need_kb": 1824.0
+      },
+      "416": {
+        "arena_kb": 1183.0,
+        "flash_kb": 3022.1,
+        "ram_need_kb": 1215.0
+      },
+      "320": {
+        "arena_kb": 700.0,
+        "flash_kb": 2993.8,
+        "ram_need_kb": 732.0
+      },
+      "256": {
+        "arena_kb": 448.0,
+        "flash_kb": 2979.1,
+        "ram_need_kb": 480.0
+      },
+      "192": {
+        "arena_kb": 252.0,
+        "flash_kb": 2967.6,
+        "ram_need_kb": 284.0
+      },
+      "160": {
+        "arena_kb": 175.0,
+        "flash_kb": 2963.1,
+        "ram_need_kb": 207.0
+      },
+      "128": {
+        "arena_kb": 112.0,
+        "flash_kb": 2959.4,
+        "ram_need_kb": 144.0
+      }
+    },
+    "w1875": {
+      "640": {
+        "arena_kb": 2800.0,
+        "flash_kb": 1931.1,
+        "ram_need_kb": 2832.0
+      },
+      "512": {
+        "arena_kb": 1792.0,
+        "flash_kb": 1872.0,
+        "ram_need_kb": 1824.0
+      },
+      "416": {
+        "arena_kb": 1183.0,
+        "flash_kb": 1836.3,
+        "ram_need_kb": 1215.0
+      },
+      "320": {
+        "arena_kb": 700.0,
+        "flash_kb": 1808.0,
+        "ram_need_kb": 732.0
+      },
+      "256": {
+        "arena_kb": 448.0,
+        "flash_kb": 1793.2,
+        "ram_need_kb": 480.0
+      },
+      "192": {
+        "arena_kb": 252.0,
+        "flash_kb": 1781.8,
+        "ram_need_kb": 284.0
+      },
+      "160": {
+        "arena_kb": 175.0,
+        "flash_kb": 1777.3,
+        "ram_need_kb": 207.0
+      },
+      "128": {
+        "arena_kb": 112.0,
+        "flash_kb": 1773.6,
+        "ram_need_kb": 144.0
+      }
+    },
+    "w125": {
+      "640": {
+        "arena_kb": 2000.0,
+        "flash_kb": 1063.1,
+        "ram_need_kb": 2032.0
+      },
+      "512": {
+        "arena_kb": 1280.0,
+        "flash_kb": 1004.0,
+        "ram_need_kb": 1312.0
+      },
+      "416": {
+        "arena_kb": 845.0,
+        "flash_kb": 968.3,
+        "ram_need_kb": 877.0
+      },
+      "320": {
+        "arena_kb": 500.0,
+        "flash_kb": 940.0,
+        "ram_need_kb": 532.0
+      },
+      "256": {
+        "arena_kb": 320.0,
+        "flash_kb": 925.2,
+        "ram_need_kb": 352.0
+      },
+      "192": {
+        "arena_kb": 180.0,
+        "flash_kb": 913.8,
+        "ram_need_kb": 212.0
+      },
+      "160": {
+        "arena_kb": 125.0,
+        "flash_kb": 909.3,
+        "ram_need_kb": 157.0
+      },
+      "128": {
+        "arena_kb": 80.0,
+        "flash_kb": 905.6,
+        "ram_need_kb": 112.0
+      }
+    },
+    "p34": {
+      "640": {
+        "arena_kb": 2800.0,
+        "flash_kb": 1109.5,
+        "ram_need_kb": 2832.0
+      },
+      "512": {
+        "arena_kb": 1792.0,
+        "flash_kb": 1053.3,
+        "ram_need_kb": 1824.0
+      },
+      "416": {
+        "arena_kb": 1183.0,
+        "flash_kb": 1019.3,
+        "ram_need_kb": 1215.0
+      },
+      "320": {
+        "arena_kb": 700.0,
+        "flash_kb": 992.4,
+        "ram_need_kb": 732.0
+      },
+      "256": {
+        "arena_kb": 448.0,
+        "flash_kb": 978.3,
+        "ram_need_kb": 480.0
+      },
+      "192": {
+        "arena_kb": 252.0,
+        "flash_kb": 967.4,
+        "ram_need_kb": 284.0
+      },
+      "160": {
+        "arena_kb": 175.0,
+        "flash_kb": 963.1,
+        "ram_need_kb": 207.0
+      },
+      "128": {
+        "arena_kb": 112.0,
+        "flash_kb": 959.5,
+        "ram_need_kb": 144.0
+      }
+    },
+    "p34w1875": {
+      "640": {
+        "arena_kb": 2800.0,
+        "flash_kb": 751.5,
+        "ram_need_kb": 2832.0
+      },
+      "512": {
+        "arena_kb": 1792.0,
+        "flash_kb": 695.3,
+        "ram_need_kb": 1824.0
+      },
+      "416": {
+        "arena_kb": 1183.0,
+        "flash_kb": 661.3,
+        "ram_need_kb": 1215.0
+      },
+      "320": {
+        "arena_kb": 700.0,
+        "flash_kb": 634.4,
+        "ram_need_kb": 732.0
+      },
+      "256": {
+        "arena_kb": 448.0,
+        "flash_kb": 620.3,
+        "ram_need_kb": 480.0
+      },
+      "192": {
+        "arena_kb": 252.0,
+        "flash_kb": 609.4,
+        "ram_need_kb": 284.0
+      },
+      "160": {
+        "arena_kb": 175.0,
+        "flash_kb": 605.1,
+        "ram_need_kb": 207.0
+      },
+      "128": {
+        "arena_kb": 112.0,
+        "flash_kb": 601.5,
+        "ram_need_kb": 144.0
+      }
+    },
+    "p34w125": {
+      "640": {
+        "arena_kb": 2000.0,
+        "flash_kb": 485.9,
+        "ram_need_kb": 2032.0
+      },
+      "512": {
+        "arena_kb": 1280.0,
+        "flash_kb": 429.6,
+        "ram_need_kb": 1312.0
+      },
+      "416": {
+        "arena_kb": 845.0,
+        "flash_kb": 395.6,
+        "ram_need_kb": 877.0
+      },
+      "320": {
+        "arena_kb": 500.0,
+        "flash_kb": 368.7,
+        "ram_need_kb": 532.0
+      },
+      "256": {
+        "arena_kb": 320.0,
+        "flash_kb": 354.6,
+        "ram_need_kb": 352.0
+      },
+      "192": {
+        "arena_kb": 180.0,
+        "flash_kb": 343.7,
+        "ram_need_kb": 212.0
+      },
+      "160": {
+        "arena_kb": 125.0,
+        "flash_kb": 339.4,
+        "ram_need_kb": 157.0
+      },
+      "128": {
+        "arena_kb": 80.0,
+        "flash_kb": 335.9,
+        "ram_need_kb": 112.0
+      }
+    }
+  },
+  "envelope_note": "flash is set by architecture, arena by input resolution (the peak is the input buffer plus the first conv output). Neither lever alone is sufficient. Flash at a given resolution = measured INT8 weights + analytic anchor constants, the latter validated against measurement at 640px."
+}
