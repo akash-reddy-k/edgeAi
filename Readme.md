@@ -15,7 +15,8 @@ A real-time person detection and loitering alert pipeline built to research how 
 | 3 | Fine-tune on scoped dataset, record mAP | Done |
 | 4 | INT8 quantization — size / accuracy / latency tradeoff | Done |
 | 5 | MCU deployment feasibility — flash / RAM profiling | Done |
-| 6 | Ablation table — size / accuracy / latency | Next |
+| 6a | Architecture ablation — flash / RAM cost, no training | Done |
+| 6b | Train surviving variants — accuracy cost | Next |
 | 7 | Writeup |  |
 
 ---
@@ -113,22 +114,33 @@ Two numbers decide MCU deployability: **flash** (weights, stored once) and **act
 RAM** (the working arena, reused across layers). `mcu_profile.py` computes both directly
 from the ONNX graph — reproducible from this repo, no vendor account required.
 
-### Flash — 3,117 KB, and input resolution cannot reduce it
+### Flash — 3,117 KB, essentially fixed regardless of input resolution
 
-| Component | Size |
-|---|---|
-| INT8 weights | 2,930.3 KB |
-| FP32 scales / zero-points | 165.1 KB |
-| INT32 biases | 21.3 KB |
-| **Total** | **3,117 KB (3.04 MB)** |
+| Component | Size | Scales with |
+|---|---|---|
+| INT8 weights | 2,930.3 KB | architecture |
+| Anchor / stride constants (FP32) | 164.1 KB | **input resolution** |
+| INT32 biases | 21.3 KB | architecture |
+| Quantization scales (FP32) | ~1.0 KB | tensor count |
+| Misc (INT64) | 0.2 KB | — |
+| **Total** | **3,117 KB (3.04 MB)** | |
 
 Sanity check: 3,005,843 parameters × 1 byte = 2,935 KB theoretical against 2,930.3 KB
 measured. The accounting matches to 0.2%.
 
-The critical property is that **YOLOv8n is fully convolutional, so its weight count is
-independent of input resolution.** Shrinking the input from 640×640 to 96×96 does not
-remove a single byte of flash. Against the 2,048 KB of the largest plain STM32 (H743), the
-model overshoots by 52% and no amount of resolution scaling closes that gap.
+**Correction (found in Phase 6).** An earlier version of this section listed the 165.1 KB
+of FP32 as "scales / zero-points" and claimed that shrinking the input "does not remove a
+single byte of flash." Both were wrong. That block is almost entirely the Detect head's
+baked-in anchor and stride constants — three tensors over all 8,400 anchor points, 20 bytes
+per point — and those *do* scale with resolution. Actual quantization scales are ~1.0 KB,
+because ultralytics quantizes per-tensor, not per-channel.
+
+So the honest version: **2,952.8 KB is resolution-independent, 164.1 KB is not.** Dropping
+640×640 → 96×96 frees 161.9 KB, taking flash to 2,955 KB. Against the 2,048 KB of the
+largest plain STM32 (H743) the model still overshoots by 44%, so the conclusion is
+unchanged — but "not a single byte" was an overstatement, and on the sub-megabyte models of
+Phase 6 that anchor block grows to ~15% of the flash bill, where it stops being a rounding
+error.
 
 ### Activation RAM — scales with resolution, bottlenecked at layer one
 
@@ -163,11 +175,16 @@ far slower than internal SRAM. The STM32N657 fits comfortably, but it carries a 
 NPU, which is precisely the dedicated AI silicon this project set out to do without. It
 proves the thesis by contradiction.
 
-The genuinely useful conclusion: **flash is the binding constraint, not RAM, and not
-latency.** Quantization already bought 72%; reaching a plain STM32H743 needs roughly another
-2× off the *weights*, which INT8 cannot give. That requires architectural change —
-channel pruning, a reduced width multiplier, or INT4 — which is exactly what Phase 6's
-ablation is now scoped to test.
+The genuinely useful conclusion: **for this architecture, flash is the binding constraint,
+not RAM, and not latency.** Quantization already bought 72%; reaching a plain STM32H743
+needs roughly another 2× off the *weights*, which INT8 cannot give. That requires
+architectural change — which is what Phase 6 tests.
+
+> **Phase 6 update:** that framing holds only while flash is so far over budget that RAM
+> never gets to matter. Once an architectural change fixes flash, RAM becomes binding —
+> and no architectural change touches it, because the arena peak is the input buffer plus
+> the first convolution. The two constraints have different causes and need different
+> levers. See [Phase 6](#phase-6--architecture-ablation-what-actually-deploys).
 
 ### Method and its limits
 
@@ -184,6 +201,126 @@ ablation is now scoped to test.
   first SiLU, that error would land straight on the headline. Both figures are reported above.
 - Flash excludes the inference runtime and application code, so the real requirement is
   higher still.
+
+---
+
+## Phase 6 — Architecture ablation: what actually deploys
+
+Phase 5 ended on a negative: nothing fits a plain STM32, at any resolution. Phase 6 asks
+whether that is a fact about *microcontrollers* or a fact about *YOLOv8n*. It turns out to
+be the latter.
+
+**Short answer: a P5-free YOLOv8 at 320×320 fits an STM32H743 with >50% headroom on both
+flash and RAM** — no NPU, no external memory. `ablate.py` measures it.
+
+### These numbers need no training
+
+Flash footprint and activation arena are fixed by the *architecture* — the shapes of the
+weight tensors and of the intermediates. They do not depend on the values the weights take,
+so an untrained model quantizes to exactly the same byte count as a trained one. The whole
+sweep below runs without a single training step, which splits Phase 6 cleanly:
+
+| Stage | Question | Cost |
+|---|---|---|
+| 1 — `ablate.py` | what does each architecture **cost**? | no training, exact |
+| 2 — `train.py` | what does each architecture **buy**? | training required |
+
+Only variants that survive Stage 1 are worth spending Stage 2 time on. **Stage 2 is not yet
+run, so no accuracy claim is made here.**
+
+### Where the parameters actually are
+
+Profiling stock YOLOv8n (nc=1) by layer shows the weights are not spread evenly:
+
+| Region | Params | Share |
+|---|---|---|
+| P5/32 pathway (backbone 7/8/9 + head 19/21) | 1,561,088 | **51.8%** |
+| Detect head | 751,507 | 25.0% |
+| P3+P4 feature trunk | 698,448 | 23.2% |
+
+**Over half the network exists to detect large objects.** P5/32 fires on objects roughly
+≥320 px in a 640 px frame — a person filling half the frame height. In fixed-mount overhead
+CCTV that essentially never happens, so on this domain that half of the model is capacity
+the deployment never uses. `configs/yolov8-p34.yaml` removes it: SPPF moves onto P4, the
+FPN/PAN becomes two-scale, and Detect regresses at strides [8, 16].
+
+### Cost of each architecture (640×640, measured)
+
+| Variant | Params | Flash | vs base | Arena |
+|---|---|---|---|---|
+| P3/P4/P5 w0.25 *(baseline)* | 3,011,043 | 3,116.9 KB | 1.00× | 2,800 KB |
+| P3/P4/P5 w0.1875 | 1,799,187 | 1,931.1 KB | 0.62× | 2,800 KB |
+| P3/P4/P5 w0.125 | 912,731 | 1,063.0 KB | 0.34× | 2,000 KB |
+| **P3/P4 w0.25** | 969,698 | **1,109.5 KB** | **0.36×** | 2,800 KB |
+| P3/P4 w0.1875 | 604,226 | 751.6 KB | 0.24× | 2,800 KB |
+| P3/P4 w0.125 | 333,242 | 485.9 KB | 0.16× | 2,000 KB |
+
+Dropping P5 alone gives **2.8× off flash** — more than INT8 quantization did, and it clears
+the 2,048 KB barrier that Phase 5 identified as unreachable.
+
+### The finding that changes the picture
+
+Look at the arena column: it is almost *independent of architecture*. The peak sits at node
+0 in every variant, and consists of the input buffer (3×640×640 = 1,200 KB) plus the first
+convolution's output. Everything downstream is smaller. So:
+
+> **Flash is set by architecture. RAM is set by input resolution.**
+> They are orthogonal, and neither lever alone is sufficient.
+
+This corrects Phase 5's "flash is the binding constraint, not RAM." That was true only while
+flash was so far over budget that RAM never got to matter. Fix flash architecturally and RAM
+immediately becomes binding — and no architectural change touches it, because you cannot
+shrink the input image by rearranging the network. The real deployment question is
+two-dimensional.
+
+### Deployment envelope — what actually fits
+
+Largest input resolution that fits, on plain (no-NPU, no-PSRAM) parts:
+
+| Target | Flash / RAM | Baseline | P3/P4 w0.25 | P3/P4 w0.125 |
+|---|---|---|---|---|
+| STM32F746 (M7 216 MHz) | 1 MB / 320 KB | none | **192×192** | 192×192 |
+| STM32F767 (M7 216 MHz) | 2 MB / 512 KB | none | **256×256** | 256×256 |
+| STM32H743 (M7 480 MHz) | 2 MB / 1 MB | none | **320×320** | 416×416 |
+
+At the headline point — **P3/P4 w0.25 at 320×320 on an STM32H743** — the requirement is
+992.4 KB flash against 2,048 KB, and 732.0 KB RAM against 1,024 KB. Both roughly half the
+budget, leaving real room for the runtime and application code that these figures exclude.
+
+Phase 5's row for the H743 read *"NO resolution fits."* It now reads 320×320.
+
+### The Stage 2 experiment
+
+Two variants land within 5.9% of the same parameter count but spend it completely
+differently:
+
+| Variant | Params | Flash | How the budget is spent |
+|---|---|---|---|
+| P3/P4/P5 w0.125 | 912,731 | 1,063.0 KB | all three scales, half channel width |
+| P3/P4 w0.25 | 969,698 | 1,109.5 KB | two scales, full channel width |
+
+Because flash says they cost the same, this is a fair architectural question rather than a
+size comparison: **at a fixed budget, is it better to keep every scale and thin it, or to
+keep full width and drop the scale the domain never uses?** Stage 2 answers it by training
+both on identical data. The hypothesis is that P3/P4 w0.25 wins on this domain — but it is
+a hypothesis, and the P5 cut gives up large-object detection outright, so it is a
+domain-specific trade and not a general improvement to YOLOv8.
+
+### Method and its limits
+
+- Flash is **measured** from each variant's INT8 ONNX initializers, not estimated.
+- **Arena is measured on the FP32 export, deliberately.** The INT8 graph is in QDQ form,
+  which interposes Quantize/Dequantize nodes between `Conv → Sigmoid → Mul`. That defeats
+  the SiLU fusion pass and counts the Q/DQ intermediates as live, inflating the arena 2.2×
+  (2,800 KB → 6,135 KB) and silently flipping feasibility verdicts. Activation *shapes* are
+  identical in both graphs, so FP32 is the correct thing to analyse.
+  `mcu_common.profile_arena` now raises on a QDQ graph rather than returning a wrong number.
+- Flash at resolutions other than 640 combines the measured weight bytes with an analytic
+  anchor-constant term (20 bytes per anchor point), which the script validates against
+  measurement at 640 before relying on it.
+- Same lower-bound caveats as Phase 5: perfect memory planner assumed, runtime and
+  application code excluded.
+- **No accuracy has been measured for any variant.** Everything above is cost.
 
 ---
 
@@ -313,6 +450,24 @@ python mcu_profile.py --resolutions 640 320 160 96   # custom resolution sweep
 python mcu_profile.py --runtime-overhead-kb 64       # stricter RAM reserve
 ```
 
+### Reproducing Phase 6 architecture ablation
+```bash
+python ablate.py    # flash + RAM for 6 architectures, no training (~4 min)
+```
+
+Writes `results/phase6_ablation.json` and prints the deployment envelope. Reuses the
+leak-free calibration set built by `quantize.py`, so run that first.
+
+Options:
+```bash
+python ablate.py --variants baseline p34       # subset of architectures
+python ablate.py --skip-envelope               # skip the resolution sweep (faster)
+python ablate.py --skip-arena                  # flash only
+python ablate.py --resolutions 640 320 160     # custom envelope sweep
+```
+
+INT8 and FP32 exports are cached in `models/ablation_cache/`; delete it to force a rebuild.
+
 ---
 
 ## Methodology & Limitations
@@ -392,14 +547,20 @@ edgeAi/
 ├── train.py               # fine-tuning
 ├── quantize.py            # ONNX FP32 + INT8 export w/ leak-free calibration
 ├── benchmark.py           # size / accuracy / latency tradeoff table
+├── mcu_common.py          # shared flash + arena analysis (Phase 5 & 6)
 ├── mcu_profile.py         # flash + activation RAM vs real MCU budgets
+├── ablate.py              # Phase 6 — architecture ablation, no training
+├── configs/               # architecture variants for the ablation
+│   ├── yolov8-scaled.yaml     # stock P3/P4/P5 + narrow width rungs
+│   └── yolov8-p34.yaml        # P5 branch removed, two-scale head
 ├── requirements.txt
 ├── models/                # weights — gitignored
 │   ├── yolov8n.pt                    # COCO-pretrained base
 │   ├── yolov8n_finetuned.pt          # Phase 3 output
 │   ├── yolov8n_finetuned_fp32.onnx   # Phase 4 — ONNX FP32
 │   ├── yolov8n_finetuned_int8.onnx   # Phase 4 — ONNX INT8
-│   └── profile_cache/                # Phase 5 — per-resolution export cache
+│   ├── profile_cache/                # Phase 5 — per-resolution export cache
+│   └── ablation_cache/               # Phase 6 — per-variant export cache
 ├── data/                  # datasets — gitignored
 │   ├── SHANGHAI_Test/         # raw dataset
 │   └── yolo_dataset/          # generated labels + symlinked splits

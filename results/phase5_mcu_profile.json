@@ -10,6 +10,8 @@
       "int32": 21.3,
       "int64": 0.2
     },
+    "anchor_const_kb": 164.1,
+    "weights_only_kb": 2952.8,
     "file_kb": 3309.5
   },
   "arena_by_resolution": [
