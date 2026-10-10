@@ -16,8 +16,8 @@ A real-time person detection and loitering alert pipeline built to research how 
 | 4 | INT8 quantization — size / accuracy / latency tradeoff | Done |
 | 5 | MCU deployment feasibility — flash / RAM profiling | Done |
 | 6a | Architecture ablation — flash / RAM cost, no training | Done |
-| 6b | Train surviving variants — accuracy cost | Next |
-| 7 | Writeup |  |
+| 6b | Train surviving variants — accuracy cost | Done |
+| 7 | Writeup | Next |
 
 ---
 
@@ -302,9 +302,41 @@ differently:
 Because flash says they cost the same, this is a fair architectural question rather than a
 size comparison: **at a fixed budget, is it better to keep every scale and thin it, or to
 keep full width and drop the scale the domain never uses?** Stage 2 answers it by training
-both on identical data. The hypothesis is that P3/P4 w0.25 wins on this domain — but it is
-a hypothesis, and the P5 cut gives up large-object detection outright, so it is a
-domain-specific trade and not a general improvement to YOLOv8.
+both from random initialization on identical data (ShanghaiTech, 640×640, patience 8), so
+the comparison isolates architecture from any pretraining head start. The hypothesis
+going in was that P3/P4 w0.25 would win on this domain — but it was a hypothesis, and the
+P5 cut gives up large-object detection outright, so it was framed as a domain-specific
+trade, not a general improvement to YOLOv8.
+
+### Stage 2 result — P3/P4 w0.25 wins on every metric
+
+| Variant | Epochs run | mAP50 | mAP50-95 | Precision | Recall |
+|---|---|---|---|---|---|
+| P3/P4/P5 w0.125 | 20 (budget exhausted, still improving) | 0.9450 | 0.7668 | 0.9405 | 0.8826 |
+| P3/P4 w0.25 | 15 (early-stopped) | 0.9467 | **0.7835** | 0.9412 | 0.8858 |
+
+P3/P4 w0.25 wins across the board — most notably **+1.67 points of mAP50-95** (0.7835 vs.
+0.7668) — while converging fast enough to trigger early stopping 5 epochs before w125
+even reached its budget. That confirms the Phase 6a hypothesis for this domain: the P5/32
+pathway the baseline spends roughly half its weights on is capacity this fixed-mount CCTV
+task doesn't need, and reinvesting it as extra width on P3/P4 measurably helps rather than
+just saving space.
+
+The trade is not free. At matched flash, P3/P4 w0.25 needs **2,800 KB of activation RAM
+against w125's 2,000 KB — 40% more** (`results/phase6_ablation.json`), because dropping
+the P5 branch removes a downsampling stage and leaves the widened P3/P4 branch to do its
+work at a larger spatial resolution. On the most RAM-constrained targets in the
+deployment envelope above, that 40% can be the difference between fitting and not.
+
+**Provenance note.** Both runs trained on a Kaggle free-tier Tesla T4. P3/P4 w0.25's final
+weights survived and are committed at `models/yolov8_ablation_p34.pt` (mirrored under
+`runs/detect/results/training/yolov8_ablation_p34_kaggle/weights/`). P3/P4/P5 w0.125's
+weights were lost when its Kaggle session ended without being saved as a committed
+version — only the metrics above (read from the training script's own printed summary)
+survive; recovering its weights or a per-epoch log would need a clean re-run. Separate,
+much shorter local attempts at both variants exist under `*_local_aborted` filenames
+(interrupted after 2–15 epochs by an unrelated caching bug) — they are kept for reference
+only and are not part of this result.
 
 ### Method and its limits
 
@@ -320,7 +352,9 @@ domain-specific trade and not a general improvement to YOLOv8.
   measurement at 640 before relying on it.
 - Same lower-bound caveats as Phase 5: perfect memory planner assumed, runtime and
   application code excluded.
-- **No accuracy has been measured for any variant.** Everything above is cost.
+- **Accuracy has only been measured for the two Stage 2 finalists** (w125, p34 — see
+  above), each from a single random-init run. The other four Phase 6a variants are cost
+  only; no training budget was spent confirming they'd also fit the accuracy bar.
 
 ---
 
