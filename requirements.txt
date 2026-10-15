@@ -9,3 +9,11 @@ lap>=0.5.12          # ByteTrack association solver
 onnx>=1.17.0
 onnxruntime>=1.20.0
 onnxslim>=0.1.59
+
+# Phase 6b: Colab/Kaggle Stage 2 results summary (colab/, kaggle/ notebooks)
+# Real Colab/Kaggle runtimes ship pandas by default, which is why this was
+# missing before and still "worked" there — but it's not a transitive
+# dependency of anything above (ultralytics uses polars, not pandas), so a
+# fresh/non-Colab environment running the results-summary cell needs it
+# declared explicitly.
+pandas>=2.0.0

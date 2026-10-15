@@ -502,6 +502,28 @@ python ablate.py --resolutions 640 320 160     # custom envelope sweep
 
 INT8 and FP32 exports are cached in `models/ablation_cache/`; delete it to force a rebuild.
 
+### Reproducing Phase 6b Stage 2 training
+
+```bash
+python train.py --variant w125 --epochs 20 --patience 8 --batch 16
+python train.py --variant p34  --epochs 20 --patience 8 --batch 16
+```
+
+Both train from random initialization (see `train.py`'s docstring for why pretrained
+weights aren't used here) on a GPU; on CPU/MPS this is slow and `--cache ram` on Apple
+Silicon unified memory can starve the GPU's own pool and hang the machine — the committed
+results were produced on a free Colab T4 instead, with `--cache` left off (plain disk reads
+are fast enough on a real GPU, and free-tier Colab system RAM is smaller than it sounds).
+
+Two ready-to-run notebooks reproduce that path without a local GPU:
+
+- `colab/phase6b_stage2_train.ipynb` — Google Drive mount for the dataset (upload your
+  local `data/SHANGHAI_Test` zipped, once; reused across sessions). This is the notebook
+  the committed weights/logs came from.
+- `kaggle/phase6b_stage2_train.ipynb` — same training steps against the Kaggle-hosted copy
+  of the dataset. Kept for reference; not the source of the committed results (see the
+  Stage 2 provenance note above for why that attempt was discarded).
+
 ---
 
 ## Methodology & Limitations
@@ -578,7 +600,7 @@ edgeAi/
 ├── edgeAi.py              # loitering detection (main script)
 ├── eval.py                # detection stats vs ground-truth frame labels
 ├── prepare_dataset.py     # pseudo-label generation + train/val split
-├── train.py               # fine-tuning
+├── train.py               # fine-tuning (Phase 3 baseline + Phase 6b Stage 2)
 ├── quantize.py            # ONNX FP32 + INT8 export w/ leak-free calibration
 ├── benchmark.py           # size / accuracy / latency tradeoff table
 ├── mcu_common.py          # shared flash + arena analysis (Phase 5 & 6)
@@ -587,12 +609,21 @@ edgeAi/
 ├── configs/               # architecture variants for the ablation
 │   ├── yolov8-scaled.yaml     # stock P3/P4/P5 + narrow width rungs
 │   └── yolov8-p34.yaml        # P5 branch removed, two-scale head
+├── colab/
+│   └── phase6b_stage2_train.ipynb  # Stage 2 training on a free Colab GPU
+├── kaggle/
+│   └── phase6b_stage2_train.ipynb  # same, against Kaggle's dataset hosting
 ├── requirements.txt
-├── models/                # weights — gitignored
+├── LICENSE                # MIT
+├── models/                # weights — gitignored EXCEPT the two force-tracked
+│   │                        Stage 2 finalists below (committed deliberately,
+│   │                        see "Stage 2 result" provenance note)
 │   ├── yolov8n.pt                    # COCO-pretrained base
 │   ├── yolov8n_finetuned.pt          # Phase 3 output
 │   ├── yolov8n_finetuned_fp32.onnx   # Phase 4 — ONNX FP32
 │   ├── yolov8n_finetuned_int8.onnx   # Phase 4 — ONNX INT8
+│   ├── yolov8_ablation_w125.pt       # Phase 6b Stage 2 — committed (git add -f)
+│   ├── yolov8_ablation_p34.pt        # Phase 6b Stage 2 — committed (git add -f)
 │   ├── profile_cache/                # Phase 5 — per-resolution export cache
 │   └── ablation_cache/               # Phase 6 — per-variant export cache
 ├── data/                  # datasets — gitignored
@@ -600,7 +631,11 @@ edgeAi/
 │   └── yolo_dataset/          # generated labels + symlinked splits
 │       └── calibration.yaml       # INT8 calibration split (from TRAIN)
 ├── results/               # eval + benchmark JSON
-├── runs/                  # ultralytics training output — gitignored
+├── runs/                  # ultralytics training output — gitignored EXCEPT
+│   │                        the two Stage 2 run dirs below (same reasoning)
+│   └── detect/results/training/
+│       ├── yolov8_ablation_w125/     # committed (git add -f)
+│       └── yolov8_ablation_p34/      # committed (git add -f)
 └── files/                 # sample test videos
 ```
 
@@ -622,3 +657,9 @@ Run `python prepare_dataset.py` first — training needs the generated label set
 
 **Training is very slow**
 `train.py` targets Apple MPS. On a non-Apple machine, change `device="mps"` to `device=0` (CUDA) or `device="cpu"` in `train.py`.
+
+---
+
+## License
+
+[MIT](LICENSE).
