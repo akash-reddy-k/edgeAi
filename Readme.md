@@ -225,8 +225,9 @@ sweep below runs without a single training step, which splits Phase 6 cleanly:
 | 1 — `ablate.py` | what does each architecture **cost**? | no training, exact |
 | 2 — `train.py` | what does each architecture **buy**? | training required |
 
-Only variants that survive Stage 1 are worth spending Stage 2 time on. **Stage 2 is not yet
-run, so no accuracy claim is made here.**
+Only variants that survive Stage 1 are worth spending Stage 2 time on. Stage 2 has since
+been run on the two finalists that survived Stage 1 — see
+["Stage 2 result"](#stage-2-result--p3p4-w025-wins-on-every-metric) below.
 
 ### Where the parameters actually are
 
