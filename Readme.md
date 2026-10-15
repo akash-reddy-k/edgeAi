@@ -312,15 +312,14 @@ trade, not a general improvement to YOLOv8.
 
 | Variant | Epochs run | mAP50 | mAP50-95 | Precision | Recall |
 |---|---|---|---|---|---|
-| P3/P4/P5 w0.125 | 20 (budget exhausted, still improving) | 0.9450 | 0.7668 | 0.9405 | 0.8826 |
-| P3/P4 w0.25 | 15 (early-stopped) | 0.9467 | **0.7835** | 0.9412 | 0.8858 |
+| P3/P4/P5 w0.125 | 20 (patience 8, not triggered) | 0.9230 | 0.6886 | 0.9294 | 0.8673 |
+| P3/P4 w0.25 | 20 (patience 8, not triggered) | 0.9346 | **0.7216** | 0.9295 | 0.8718 |
 
-P3/P4 w0.25 wins across the board — most notably **+1.67 points of mAP50-95** (0.7835 vs.
-0.7668) — while converging fast enough to trigger early stopping 5 epochs before w125
-even reached its budget. That confirms the Phase 6a hypothesis for this domain: the P5/32
-pathway the baseline spends roughly half its weights on is capacity this fixed-mount CCTV
-task doesn't need, and reinvesting it as extra width on P3/P4 measurably helps rather than
-just saving space.
+P3/P4 w0.25 wins across the board — most notably **+3.30 points of mAP50-95** (0.7216 vs.
+0.6886). That confirms the Phase 6a hypothesis for this domain: the P5/32 pathway the
+baseline spends roughly half its weights on is capacity this fixed-mount CCTV task doesn't
+need, and reinvesting it as extra width on P3/P4 measurably helps rather than just saving
+space.
 
 The trade is not free. At matched flash, P3/P4 w0.25 needs **2,800 KB of activation RAM
 against w125's 2,000 KB — 40% more** (`results/phase6_ablation.json`), because dropping
@@ -328,15 +327,15 @@ the P5 branch removes a downsampling stage and leaves the widened P3/P4 branch t
 work at a larger spatial resolution. On the most RAM-constrained targets in the
 deployment envelope above, that 40% can be the difference between fitting and not.
 
-**Provenance note.** Both runs trained on a Kaggle free-tier Tesla T4. P3/P4 w0.25's final
-weights survived and are committed at `models/yolov8_ablation_p34.pt` (mirrored under
-`runs/detect/results/training/yolov8_ablation_p34_kaggle/weights/`). P3/P4/P5 w0.125's
-weights were lost when its Kaggle session ended without being saved as a committed
-version — only the metrics above (read from the training script's own printed summary)
-survive; recovering its weights or a per-epoch log would need a clean re-run. Separate,
-much shorter local attempts at both variants exist under `*_local_aborted` filenames
-(interrupted after 2–15 epochs by an unrelated caching bug) — they are kept for reference
-only and are not part of this result.
+**Provenance note.** Both variants were trained together in a single run on a free-tier
+Colab Tesla T4, each completing the full 20-epoch budget. Weights and full per-epoch logs
+for both are committed at `models/yolov8_ablation_w125.pt` / `models/yolov8_ablation_p34.pt`
+(mirrored under `runs/detect/results/training/yolov8_ablation_{w125,p34}/`, including
+`results.csv`, `args.yaml`, and the training/validation batch plots). Earlier attempts at
+this comparison — a local run and a Kaggle run — were discarded: the local run hit a
+caching bug (`--cache ram` on Apple Silicon unified memory, see the Colab notebook's intro
+cell), and the Kaggle run lost time to a dataset-mount bug (a stray nested `frames/`
+directory being picked over the real one) before a clean version could be committed.
 
 ### Method and its limits
 
