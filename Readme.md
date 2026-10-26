@@ -17,7 +17,17 @@ A real-time person detection and loitering alert pipeline built to research how 
 | 5 | MCU deployment feasibility — flash / RAM profiling | Done |
 | 6a | Architecture ablation — flash / RAM cost, no training | Done |
 | 6b | Train surviving variants — accuracy cost | Done |
-| 7 | Writeup | Next |
+| 7 | Writeup | Done |
+
+---
+
+**Writeup:** [`writeup/paper.pdf`](writeup/paper.pdf) is a short, arXiv-style paper
+covering problem framing, method, results, and the hardware feasibility discussion
+summarized below, with the same honest accounting of limitations as this README. It is
+built from the same committed result JSON and training logs this README cites —
+`python writeup/make_figures.py` regenerates its two figures from those artifacts, and
+`tectonic writeup/paper.tex` rebuilds the PDF — so the paper's numbers cannot silently
+drift from this README's.
 
 ---
 
