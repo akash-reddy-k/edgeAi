@@ -7,3 +7,8 @@ edgeai_env/
 __pycache__/
 *.pyc
 runs/
+*.aux
+*.bbl
+*.blg
+*.out
+*.log

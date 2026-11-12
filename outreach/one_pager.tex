@@ -1,0 +1,71 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=0.85in]{geometry}
+\usepackage[hidelinks]{hyperref}
+\usepackage{enumitem}
+\usepackage{titlesec}
+
+\pagestyle{empty}
+\setlength{\parskip}{0.55em}
+\setlength{\parindent}{0pt}
+
+\titleformat{\paragraph}[runin]{\bfseries}{}{}{}[.]
+\titlespacing*{\paragraph}{0pt}{0.8em}{0.6em}
+
+\begin{document}
+
+\begin{center}
+{\Large\textbf{Fitting Person Detection on a Plain Microcontroller}}\\[0.3em]
+Akash Reddy K \quad\textbar\quad Independent research / portfolio project\\
+Code, data, full paper: \url{https://github.com/akash-reddy-k/edgeAi}
+\end{center}
+
+\vspace{0.4em}
+
+Commercial CCTV analytics (Hikvision AcuSense, Ambarella CV7) run person
+detection on purpose-built AI silicon with dedicated neural accelerators.
+This project asks how far equivalent functionality---loitering detection on
+a fixed-mount camera---can be pushed onto a \textbf{plain microcontroller
+with no such accelerator}, and measures the answer rather than assuming it.
+
+\paragraph{Method} Fine-tune YOLOv8n for single-class person detection
+(ShanghaiTech Campus dataset), track with ByteTrack, export to ONNX, apply
+INT8 post-training quantization. An ONNX-graph profiler then computes flash
+and activation-RAM footprint directly---no vendor toolchain or account
+required, fully reproducible from committed code.
+
+\paragraph{Finding 1 --- quantization alone is not enough} The INT8 model
+is 72\% smaller than its FP32 export for a 0.2\% accuracy cost, but at the
+stock YOLOv8n architecture, \textbf{nothing fits any plain STM32, at any
+input resolution}---flash alone overshoots the largest plain part
+(STM32H743, 2\,MB) by 50\%.
+
+\paragraph{Finding 2 --- that is an architecture fact, not a hardware fact}
+Profiling shows YOLOv8n's large-object detection pathway (P5/32) accounts
+for 51.8\% of parameters and is functionally unused in fixed-mount overhead
+CCTV, where a person never fills half the frame. Removing it cuts flash
+2.8$\times$---more than quantization achieved on its own.
+
+\paragraph{Finding 3 --- the fix does not cost accuracy, it improves it}
+Reinvesting that freed budget as extra width (rather than shrinking every
+scale uniformly) wins on every metric in a controlled, random-init-matched
+comparison, including $+3.3$ points of mAP50-95. The resulting architecture
+fits an STM32H743 at $320\times320$ with roughly 50\% headroom on both
+flash and RAM---no NPU, no external memory.
+
+\paragraph{Honest caveat} The accuracy numbers above are a relative
+comparison on a held-constant, self-referential label set (no
+ground-truth bounding-box annotations exist for this dataset); the MCU fit
+numbers are an analytical lower bound, not yet verified on physical
+hardware. Both limitations are stated explicitly in the full paper, and
+both are active next steps.
+
+\paragraph{Why this, not a bigger model} The research contribution is the
+compression-and-deployment pipeline and its diagnostic method---distinguish
+what a flash budget is actually spent on before assuming quantization is
+the only lever---not a new detector.
+
+\vspace{0.3em}
+\noindent Full paper (12 pages, arXiv-style): \texttt{writeup/paper.pdf} in the repo above.
+
+\end{document}
